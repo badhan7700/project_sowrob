@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Sign Recognition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(233, 69, 96, 0.5);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.15);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .preview-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .preview-container.active {
+            display: block;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            display: block;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #e94560;
+        }
+
+        .model-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .model-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .model-option:hover {
+            border-color: rgba(233, 69, 96, 0.5);
+        }
+
+        .model-option.selected {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .model-option input {
+            display: none;
+        }
+
+        .model-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .model-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .model-desc {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .predict-btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .predict-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+        }
+
+        .predict-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .results-card {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .model-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: rgba(233, 69, 96, 0.2);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #e94560;
+            margin-bottom: 20px;
+        }
+
+        .prediction-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .prediction-item.top {
+            background: rgba(233, 69, 96, 0.15);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+        }
+
+        .prediction-rank {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .prediction-item.top .prediction-rank {
+            background: #e94560;
+        }
+
+        .prediction-details {
+            flex: 1;
+        }
+
+        .prediction-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .confidence-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .prediction-confidence {
+            font-size: 0.9rem;
+            color: #e94560;
+            font-weight: 600;
+            margin-left: 15px;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .error-message {
+            padding: 15px;
+            background: rgba(255, 100, 100, 0.1);
+            border: 1px solid rgba(255, 100, 100, 0.3);
+            border-radius: 10px;
+            color: #ff6b6b;
+        }
+
+        @media (max-width: 600px) {
+            .model-options {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚦 Traffic Sign Recognition</h1>
+            <p class="subtitle">Upload a traffic sign image and let AI identify it</p>
+        </header>
+
+        <div class="card">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <p class="upload-text">Click or drag & drop an image here</p>
+                <p class="upload-hint">Supports: JPG, JPEG, PNG</p>
+            </div>
+            <input type="file" id="fileInput" accept=".jpg,.jpeg,.png">
+            
+            <div class="preview-container" id="previewContainer">
+                <img id="imagePreview" alt="Preview">
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="section-title">Select Model</h3>
+            <div class="model-options">
+                <label class="model-option selected" data-model="simple_cnn">
+                    <input type="radio" name="model" value="simple_cnn" checked>
+                    <div class="model-info">
+                        <span class="model-name">Simple CNN</span>
+                        <span class="model-desc">Fast & Lightweight (32×32)</span>
+                    </div>
+                </label>
+                <label class="model-option" data-model="mobilenetv2">
+                    <input type="radio" name="model" value="mobilenetv2">
+                    <div class="model-info">
+                        <span class="model-name">MobileNetV2</span>
+                        <span class="model-desc">More Accurate (96×96)</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <button class="predict-btn" id="predictBtn" disabled>
+            <span class="btn-text">🔍 Recognize Sign</span>
+            <span class="btn-loading" style="display:none;">Processing...</span>
+        </button>
+
+        <div class="card results-card" id="resultsCard" style="display:none;">
+            <h3 class="section-title">Prediction Results</h3>
+            <div class="model-badge" id="modelBadge"></div>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const predictBtn = document.getElementById('predictBtn');
+        const resultsCard = document.getElementById('resultsCard');
+        const resultsContent = document.getElementById('resultsContent');
+        const modelBadge = document.getElementById('modelBadge');
+        const modelOptions = document.querySelectorAll('.model-option');
+
+        let selectedFile = null;
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFile(files[0]);
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a JPG, JPEG, or PNG image.');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                previewContainer.classList.add('active');
+                predictBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Model selection
+        modelOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                modelOptions.forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                option.querySelector('input').checked = true;
+            });
+        });
+
+        // Predict button
+        predictBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const btnText = predictBtn.querySelector('.btn-text');
+            const btnLoading = predictBtn.querySelector('.btn-loading');
+            
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline';
+            predictBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('model', document.querySelector('input[name="model"]:checked').value);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    resultsContent.innerHTML = `<div class="error-message">${data.error}</div>`;
+                    resultsCard.style.display = 'block';
+                }
+            } catch (error) {
+                resultsContent.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+                resultsCard.style.display = 'block';
+            }
+
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+            predictBtn.disabled = false;
+        });
+
+        function displayResults(data) {
+            modelBadge.textContent = `Model: ${data.model_used}`;
+            
+            let html = '';
+            data.predictions.forEach((pred, index) => {
+                const isTop = index === 0;
+                html += `
+                    <div class="prediction-item ${isTop ? 'top' : ''}">
+                        <div class="prediction-rank">${index + 1}</div>
+                        <div class="prediction-details">
+                            <div class="prediction-name">${pred.class_name}</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: ${pred.confidence}%"></div>
+                            </div>
+                        </div>
+                        <div class="prediction-confidence">${pred.confidence.toFixed(1)}%</div>
+                    </div>
+                `;
+            });
+
+            resultsContent.innerHTML = html;
+            resultsCard.style.display = 'block';
+            resultsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>
